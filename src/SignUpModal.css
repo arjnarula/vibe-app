@@ -1,0 +1,245 @@
+/* ---- Backdrop ---- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(13, 13, 13, 0);
+  pointer-events: none;
+  transition: background 0.45s ease;
+}
+
+.modal-backdrop-active {
+  background: rgba(13, 13, 13, 0.92);
+  pointer-events: auto;
+}
+
+/* ---- Card ---- */
+.modal-card {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 100;
+  width: 420px;
+  max-width: 90vw;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 20px;
+  overflow: hidden;
+  background: none;
+
+  transform: translate(calc(-50% + var(--ox, 0px)), calc(-50% + var(--oy, 0px))) scale(0.04);
+  opacity: 0;
+  pointer-events: none;
+
+  transition:
+    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.35s ease;
+}
+
+.modal-card-active {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ---- Glow layer (orb colours absorbed into card) ---- */
+.modal-glow-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+.modal-glow {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0;
+  will-change: opacity;
+  transition: opacity 0.2s ease;
+}
+
+/* Entering: staggered fade-in per blob */
+.modal-card-active .modal-glow {
+  transition: opacity 0.45s ease;
+}
+
+.modal-glow-0 {
+  width: 300px;
+  height: 300px;
+  background: rgba(229, 214, 148, 0.85);
+  filter: blur(55px);
+  top: -110px;
+  left: -70px;
+}
+
+.modal-glow-1 {
+  width: 260px;
+  height: 260px;
+  background: rgba(203, 174, 44, 0.85);
+  filter: blur(55px);
+  top: -50px;
+  right: -60px;
+}
+
+.modal-glow-2 {
+  width: 240px;
+  height: 240px;
+  background: rgba(255, 138, 94, 0.85);
+  filter: blur(55px);
+  bottom: -90px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.modal-card-active .modal-glow-0 {
+  opacity: 1;
+  transition-delay: 0.2s;
+}
+
+.modal-card-active .modal-glow-1 {
+  opacity: 1;
+  transition-delay: 0.35s;
+}
+
+.modal-card-active .modal-glow-2 {
+  opacity: 1;
+  transition-delay: 0.48s;
+}
+
+/* ---- Dark overlay above glow, below content ---- */
+.modal-dark-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  background: radial-gradient(
+    ellipse at 50% 40%,
+    rgba(20, 20, 20, 0.62),
+    rgba(16, 16, 16, 0.82)
+  );
+}
+
+/* ---- Content layer ---- */
+.modal-content {
+  position: relative;
+  z-index: 2;
+  padding: 48px 40px 40px;
+  text-align: center;
+}
+
+/* ---- Close button ---- */
+.modal-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, background 0.2s;
+}
+
+.modal-close-btn:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ---- Typography ---- */
+.modal-title {
+  color: var(--white);
+  font-family: 'Dm sans', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.modal-subtitle {
+  color: var(--silver);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  margin-bottom: 28px;
+}
+
+/* ---- Divider ---- */
+.modal-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin-bottom: 28px;
+}
+
+/* ---- Google button container ---- */
+.google-btn-container {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.google-btn-container.google-btn-ready {
+  opacity: 1;
+}
+
+/* ---- Loading state ---- */
+.google-btn-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 44px;
+  color: var(--silver);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+}
+
+.google-btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-top-color: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---- No client-id notice ---- */
+.google-btn-notice {
+  text-align: center;
+  color: var(--silver);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.google-btn-notice-sub {
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.google-btn-notice code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+/* ---- Responsive ---- */
+@media screen and (max-width: 479px) {
+  .modal-content {
+    padding: 40px 24px 32px;
+  }
+
+  .modal-title {
+    font-size: 20px;
+  }
+}

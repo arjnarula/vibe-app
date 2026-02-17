@@ -1,0 +1,115 @@
+/* Floating Orbs Container */
+.floating-orbs-container {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Base Orb Styles */
+.floating-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(64px);
+}
+
+/* Orb 1 - Yellowish color */
+.floating-orb-1 {
+  top: 25%;
+  left: 25%;
+  width: 384px;
+  height: 384px;
+  background-color: rgba(229, 214, 148, 0.4);
+  animation: float-1 14s ease-in-out infinite;
+}
+
+/* Orb 2 - Golden color */
+.floating-orb-2 {
+  top: 33.33%;
+  right: 25%;
+  width: 320px;
+  height: 320px;
+  background-color: rgba(203, 174, 44, 0.4);
+  animation: float-2 18s ease-in-out infinite;
+}
+
+/* Orb 3 - Orangey color */
+.floating-orb-3 {
+  bottom: 25%;
+  left: 33.33%;
+  width: 288px;
+  height: 288px;
+  background-color: rgba(255, 138, 94, 0.4);
+  animation: float-3 16s ease-in-out infinite;
+}
+
+/* Animation Keyframes */
+@keyframes float-1 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(50px, -80px) scale(1.1);
+  }
+  50% {
+    transform: translate(-30px, 60px) scale(0.9);
+  }
+  75% {
+    transform: translate(80px, 40px) scale(1.05);
+  }
+}
+
+@keyframes float-2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-60px, 70px) scale(1.15);
+  }
+  66% {
+    transform: translate(40px, -50px) scale(0.85);
+  }
+}
+
+@keyframes float-3 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  20% {
+    transform: translate(70px, -40px) scale(1.2);
+  }
+  40% {
+    transform: translate(-50px, 90px) scale(0.8);
+  }
+  60% {
+    transform: translate(30px, -60px) scale(1.1);
+  }
+  80% {
+    transform: translate(-80px, 20px) scale(0.95);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .floating-orb-1 {
+    width: 200px;
+    height: 200px;
+    filter: blur(40px);
+  }
+  
+  .floating-orb-2 {
+    width: 180px;
+    height: 180px;
+    filter: blur(40px);
+  }
+  
+  .floating-orb-3 {
+    width: 160px;
+    height: 160px;
+    filter: blur(40px);
+  }
+}
