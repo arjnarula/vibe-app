@@ -104,6 +104,7 @@ const FloatingOrbs = ({ condensing, orbPositionsRef }) => {
   const animStartRef = useRef(0);
   const capturedRef = useRef(null);
   const perOrbDurRef = useRef([400, 400, 400]);
+  const zElevateTimeRef = useRef(0);
   const prevSizeRef = useRef({ w: 0, h: 0 });
 
   const getViewport = useCallback(() => ({
@@ -134,6 +135,7 @@ const FloatingOrbs = ({ condensing, orbPositionsRef }) => {
         CONDENSE_BASE + (d / maxDist) * CONDENSE_EXTRA
       );
       animStartRef.current = performance.now();
+      zElevateTimeRef.current = performance.now() + 100;
       modeRef.current = 'condensing';
     } else if (!condensing && (modeRef.current === 'condensed' || modeRef.current === 'condensing')) {
       animStartRef.current = performance.now();
@@ -206,9 +208,11 @@ const FloatingOrbs = ({ condensing, orbPositionsRef }) => {
         }
 
       } else if (mode === 'condensing' || mode === 'condensed') {
-        if (container) container.style.zIndex = '95';
+        // Delay z-index elevation so backdrop starts darkening first
+        const now = performance.now();
+        if (container) container.style.zIndex = now >= zElevateTimeRef.current ? '95' : '0';
         const cx = w / 2, cy = h / 2;
-        const elapsed = performance.now() - animStartRef.current;
+        const elapsed = now - animStartRef.current;
         let allDone = true;
         for (let i = 0; i < 3; i++) {
           const cap = capturedRef.current[i];
@@ -219,7 +223,8 @@ const FloatingOrbs = ({ condensing, orbPositionsRef }) => {
           const x = cap.x + (cx - cap.x) * t;
           const y = cap.y + (cy - cap.y) * t;
           const scale = 1 - t * (1 - MIN_SCALE);
-          const opacity = t < 0.6 ? 1 : Math.max(0, 1 - (t - 0.6) / 0.4);
+          // Fade immediately from the start (no bright flash on first frames)
+          const opacity = Math.max(0, 1 - t / 0.85);
           const el = orbRefs[i].current;
           if (el) {
             el.style.transform = `translate(${x - cap.size / 2}px, ${y - cap.size / 2}px) scale(${scale})`;
