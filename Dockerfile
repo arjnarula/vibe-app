@@ -14,7 +14,11 @@ RUN npm install
 # Copy source code
 COPY . .
 
-# Build the app (reads REACT_APP_* env vars from .env at build time)
+# Accept Google Client ID as a build argument
+ARG REACT_APP_GOOGLE_CLIENT_ID
+ENV REACT_APP_GOOGLE_CLIENT_ID=$REACT_APP_GOOGLE_CLIENT_ID
+
+# Build the app (REACT_APP_* vars are inlined at build time)
 RUN npm run build
 
 # Stage 2: Serve with nginx
