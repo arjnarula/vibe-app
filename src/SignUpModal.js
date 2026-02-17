@@ -15,23 +15,29 @@ function decodeJwtPayload(token) {
   return JSON.parse(json);
 }
 
-const SignUpModal = ({ open, buttonRef, onClose, onSignIn }) => {
-  const [mounted, setMounted] = useState(false);
+const BLOB_SIZES = [300, 260, 240];
+const BLOB_GRADIENTS = [
+  'radial-gradient(circle, rgba(229,214,148,0.92) 0%, rgba(229,214,148,0) 70%)',
+  'radial-gradient(circle, rgba(203,174,44,0.92) 0%, rgba(203,174,44,0) 70%)',
+  'radial-gradient(circle, rgba(255,138,94,0.92) 0%, rgba(255,138,94,0) 70%)',
+];
+
+const SignUpModal = ({ open, buttonRef, onClose, onSignIn, orbPositionsRef }) => {
   const [active, setActive] = useState(false);
+  const [blobStyles, setBlobStyles] = useState(null);
   const [googleReady, setGoogleReady] = useState(false);
   const originRef = useRef({ x: 0, y: 0 });
-  const timeoutRef = useRef(null);
   const rafRef = useRef(null);
   const googleBtnRef = useRef(null);
   const onSignInRef = useRef(onSignIn);
   onSignInRef.current = onSignIn;
 
-  // Mount / unmount lifecycle
+  // Open / close lifecycle
   useEffect(() => {
-    clearTimeout(timeoutRef.current);
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
     if (open) {
+      // Compute card origin from button
       if (buttonRef.current) {
         const rect = buttonRef.current.getBoundingClientRect();
         originRef.current = {
@@ -39,7 +45,27 @@ const SignUpModal = ({ open, buttonRef, onClose, onSignIn }) => {
           y: rect.top + rect.height / 2 - window.innerHeight / 2,
         };
       }
-      setMounted(true);
+
+      // Fix 3: Map live orb positions → blob positions inside the card
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const cx = vw / 2, cy = vh / 2;
+      const positions = orbPositionsRef?.current;
+
+      if (positions && positions.length === 3) {
+        const dists = positions.map((p) =>
+          Math.sqrt((p.x - cx) ** 2 + (p.y - cy) ** 2)
+        );
+        const maxDist = Math.max(...dists, 1);
+        setBlobStyles(
+          positions.map((p, i) => ({
+            left: `${(p.x / vw) * 100}%`,
+            top: `${(p.y / vh) * 100}%`,
+            delay: `${((dists[i] / maxDist) * 0.20).toFixed(2)}s`,
+          }))
+        );
+      }
+
       setGoogleReady(false);
       rafRef.current = requestAnimationFrame(() => {
         rafRef.current = requestAnimationFrame(() => {
@@ -48,19 +74,15 @@ const SignUpModal = ({ open, buttonRef, onClose, onSignIn }) => {
       });
     } else {
       setActive(false);
-      timeoutRef.current = setTimeout(() => {
-        setMounted(false);
-        setGoogleReady(false);
-      }, 550);
+      setGoogleReady(false);
     }
 
     return () => {
-      clearTimeout(timeoutRef.current);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [open, buttonRef]);
+  }, [open, buttonRef, orbPositionsRef]);
 
-  // Initialize Google Identity Services once active + mounted
+  // Initialize Google Identity Services
   useEffect(() => {
     if (!active || !CLIENT_ID) return;
 
@@ -106,8 +128,7 @@ const SignUpModal = ({ open, buttonRef, onClose, onSignIn }) => {
     }
   }, [active]);
 
-  if (!mounted) return null;
-
+  // Always render — no conditional return (Fix 2: eliminates first-click DOM jank)
   const { x, y } = originRef.current;
   const hasClientId = Boolean(CLIENT_ID);
 
@@ -115,23 +136,35 @@ const SignUpModal = ({ open, buttonRef, onClose, onSignIn }) => {
     <>
       <div
         className={`modal-backdrop ${active ? 'modal-backdrop-active' : ''}`}
-        onClick={onClose}
+        onClick={active ? onClose : undefined}
       />
       <div
         className={`modal-card ${active ? 'modal-card-active' : ''}`}
         style={{ '--ox': `${x}px`, '--oy': `${y}px` }}
       >
-        {/* Gradient glow layer */}
+        {/* Glow layer — radial gradients, no filter:blur (Fix 2) */}
         <div className="modal-glow-layer" aria-hidden="true">
-          <div className="modal-glow modal-glow-0" />
-          <div className="modal-glow modal-glow-1" />
-          <div className="modal-glow modal-glow-2" />
+          {BLOB_SIZES.map((size, i) => {
+            const bs = blobStyles?.[i];
+            return (
+              <div
+                key={i}
+                className="modal-glow"
+                style={{
+                  width: size,
+                  height: size,
+                  background: BLOB_GRADIENTS[i],
+                  left: bs?.left ?? '50%',
+                  top: bs?.top ?? '50%',
+                  transitionDelay: active ? (bs?.delay ?? '0.3s') : '0s',
+                }}
+              />
+            );
+          })}
         </div>
 
-        {/* Dark overlay */}
         <div className="modal-dark-overlay" aria-hidden="true" />
 
-        {/* Content */}
         <div className="modal-content">
           <button className="modal-close-btn" onClick={onClose} aria-label="Close">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -144,7 +177,6 @@ const SignUpModal = ({ open, buttonRef, onClose, onSignIn }) => {
 
           {hasClientId ? (
             <>
-              {/* Google SDK renders its official button here */}
               <div
                 ref={googleBtnRef}
                 className={`google-btn-container ${googleReady ? 'google-btn-ready' : ''}`}

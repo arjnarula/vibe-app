@@ -7,13 +7,13 @@ function App() {
   const [modalOpen, setModalOpen] = useState(false);
   const [user, setUser] = useState(null);
   const buttonRef = useRef(null);
+  const orbPositionsRef = useRef([]);
 
   const handleSignIn = (userData) => {
     setUser(userData);
     setModalOpen(false);
   };
 
-  // Step 4 will replace this with a real Dashboard component
   if (user) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -46,7 +46,7 @@ function App() {
 
   return (
     <>
-      <FloatingOrbs condensing={modalOpen} />
+      <FloatingOrbs condensing={modalOpen} orbPositionsRef={orbPositionsRef} />
       <main className="landing">
         <div className={`landing-content ${modalOpen ? 'landing-content-faded' : ''}`}>
           <h1 className="name">Pantheon</h1>
@@ -66,6 +66,7 @@ function App() {
         buttonRef={buttonRef}
         onClose={() => setModalOpen(false)}
         onSignIn={handleSignIn}
+        orbPositionsRef={orbPositionsRef}
       />
     </>
   );

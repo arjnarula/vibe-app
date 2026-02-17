@@ -2,14 +2,10 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import './FloatingOrbs.css';
 
 /*
-  3-Body Gravitational Simulation with Modal Condensing
-  ------------------------------------------------------
-  Modes:
-    physics     – normal 3-body simulation (z-index 0)
-    condensing  – orbs fly to viewport center with per-orb timing,
-                  fading out as they arrive (z-index 95)
-    condensed   – orbs hold at center, invisible (z-index 95)
-    expanding   – orbs fade in and fly back to captured positions (z-index 95)
+  3-Body Gravitational Simulation
+  --------------------------------
+  - Resize-aware: remaps body positions proportionally when viewport changes.
+  - Writes live positions to orbPositionsRef for other components.
 */
 
 const G = 500;
@@ -40,7 +36,6 @@ function clampSpeed(vx, vy) {
 
 function computeAccelerations(bodies, w, h) {
   const acc = bodies.map(() => ({ ax: 0, ay: 0 }));
-
   for (let i = 0; i < bodies.length; i++) {
     for (let j = i + 1; j < bodies.length; j++) {
       const dx = bodies[j].x - bodies[i].x;
@@ -50,13 +45,10 @@ function computeAccelerations(bodies, w, h) {
       const inv = (G * MASS) / (softSq * Math.sqrt(softSq));
       const fx = inv * dx;
       const fy = inv * dy;
-      acc[i].ax += fx;
-      acc[i].ay += fy;
-      acc[j].ax -= fx;
-      acc[j].ay -= fy;
+      acc[i].ax += fx; acc[i].ay += fy;
+      acc[j].ax -= fx; acc[j].ay -= fy;
     }
   }
-
   for (let i = 0; i < bodies.length; i++) {
     const b = bodies[i];
     if (b.x < BOUNDARY_MARGIN) acc[i].ax += BOUNDARY_FORCE * (BOUNDARY_MARGIN - b.x);
@@ -64,42 +56,33 @@ function computeAccelerations(bodies, w, h) {
     if (b.y < BOUNDARY_MARGIN) acc[i].ay += BOUNDARY_FORCE * (BOUNDARY_MARGIN - b.y);
     else if (b.y > h - BOUNDARY_MARGIN) acc[i].ay -= BOUNDARY_FORCE * (b.y - (h - BOUNDARY_MARGIN));
   }
-
   return acc;
 }
 
 function initBodies(w, h) {
-  const cx = w / 2;
-  const cy = h / 2;
+  const cx = w / 2, cy = h / 2;
   const radius = Math.min(w, h) * 0.22;
   const baseAngle = Math.random() * Math.PI * 2;
-
   const positions = [0, 1, 2].map((i) => {
     const angle = baseAngle + (i * 2 * Math.PI) / 3;
     return { x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) };
   });
-
   const sideLength = radius * Math.sqrt(3);
   const orbitalSpeed = Math.sqrt((G * MASS) / sideLength) * 0.85;
   const jitterMag = orbitalSpeed * 0.15;
-
   const bodies = positions.map((pos) => {
-    const dx = pos.x - cx;
-    const dy = pos.y - cy;
+    const dx = pos.x - cx, dy = pos.y - cy;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    const tx = -dy / dist;
-    const ty = dx / dist;
+    const tx = -dy / dist, ty = dx / dist;
     return {
       x: pos.x, y: pos.y,
       vx: tx * orbitalSpeed + (Math.random() - 0.5) * jitterMag,
       vy: ty * orbitalSpeed + (Math.random() - 0.5) * jitterMag,
     };
   });
-
   const avgVx = bodies.reduce((s, b) => s + b.vx, 0) / 3;
   const avgVy = bodies.reduce((s, b) => s + b.vy, 0) / 3;
   bodies.forEach((b) => { b.vx -= avgVx; b.vy -= avgVy; });
-
   return bodies;
 }
 
@@ -110,7 +93,7 @@ const ORB_COLORS = [
   'rgba(255, 138, 94, 0.4)',
 ];
 
-const FloatingOrbs = ({ condensing }) => {
+const FloatingOrbs = ({ condensing, orbPositionsRef }) => {
   const bodiesRef = useRef(null);
   const rafRef = useRef(null);
   const containerRef = useRef(null);
@@ -121,6 +104,7 @@ const FloatingOrbs = ({ condensing }) => {
   const animStartRef = useRef(0);
   const capturedRef = useRef(null);
   const perOrbDurRef = useRef([400, 400, 400]);
+  const prevSizeRef = useRef({ w: 0, h: 0 });
 
   const getViewport = useCallback(() => ({
     w: window.innerWidth,
@@ -130,6 +114,7 @@ const FloatingOrbs = ({ condensing }) => {
   useEffect(() => {
     const { w, h } = getViewport();
     bodiesRef.current = initBodies(w, h);
+    prevSizeRef.current = { w, h };
     setReady(true);
   }, [getViewport]);
 
@@ -137,13 +122,10 @@ const FloatingOrbs = ({ condensing }) => {
     if (!ready) return;
     if (condensing && modeRef.current === 'physics') {
       const { w, h } = getViewport();
-      const cx = w / 2;
-      const cy = h / 2;
-
+      const cx = w / 2, cy = h / 2;
       capturedRef.current = bodiesRef.current.map((b, i) => ({
         x: b.x, y: b.y, vx: b.vx, vy: b.vy, size: ORB_SIZES[i],
       }));
-
       const dists = capturedRef.current.map((c) =>
         Math.sqrt((c.x - cx) ** 2 + (c.y - cy) ** 2)
       );
@@ -151,7 +133,6 @@ const FloatingOrbs = ({ condensing }) => {
       perOrbDurRef.current = dists.map((d) =>
         CONDENSE_BASE + (d / maxDist) * CONDENSE_EXTRA
       );
-
       animStartRef.current = performance.now();
       modeRef.current = 'condensing';
     } else if (!condensing && (modeRef.current === 'condensed' || modeRef.current === 'condensing')) {
@@ -168,10 +149,36 @@ const FloatingOrbs = ({ condensing }) => {
       const bodies = bodiesRef.current;
       const mode = modeRef.current;
       const container = containerRef.current;
+      const prev = prevSizeRef.current;
+
+      // --- Fix 1: Resize detection — remap positions proportionally ---
+      if (prev.w > 0 && prev.h > 0 && (w !== prev.w || h !== prev.h)) {
+        const ocx = prev.w / 2, ocy = prev.h / 2;
+        const ncx = w / 2, ncy = h / 2;
+        const sx = w / prev.w, sy = h / prev.h;
+        for (let i = 0; i < 3; i++) {
+          bodies[i].x = ncx + (bodies[i].x - ocx) * sx;
+          bodies[i].y = ncy + (bodies[i].y - ocy) * sy;
+        }
+        if (capturedRef.current) {
+          for (let i = 0; i < 3; i++) {
+            const c = capturedRef.current[i];
+            c.x = ncx + (c.x - ocx) * sx;
+            c.y = ncy + (c.y - ocy) * sy;
+          }
+        }
+        prevSizeRef.current = { w, h };
+      } else if (w !== prev.w || h !== prev.h) {
+        prevSizeRef.current = { w, h };
+      }
+
+      // --- Write live positions for the modal ---
+      if (orbPositionsRef) {
+        orbPositionsRef.current = bodies.map((b) => ({ x: b.x, y: b.y }));
+      }
 
       if (mode === 'physics') {
         if (container) container.style.zIndex = '0';
-
         const acc = computeAccelerations(bodies, w, h);
         for (let i = 0; i < 3; i++) {
           bodies[i].vx += acc[i].ax * DT * 0.5;
@@ -200,44 +207,35 @@ const FloatingOrbs = ({ condensing }) => {
 
       } else if (mode === 'condensing' || mode === 'condensed') {
         if (container) container.style.zIndex = '95';
-        const cx = w / 2;
-        const cy = h / 2;
+        const cx = w / 2, cy = h / 2;
         const elapsed = performance.now() - animStartRef.current;
         let allDone = true;
-
         for (let i = 0; i < 3; i++) {
           const cap = capturedRef.current[i];
           const dur = perOrbDurRef.current[i];
           const rawT = mode === 'condensed' ? 1 : Math.min(elapsed / dur, 1);
           if (rawT < 1) allDone = false;
           const t = easeOutCubic(rawT);
-
           const x = cap.x + (cx - cap.x) * t;
           const y = cap.y + (cy - cap.y) * t;
           const scale = 1 - t * (1 - MIN_SCALE);
           const opacity = t < 0.6 ? 1 : Math.max(0, 1 - (t - 0.6) / 0.4);
-
           const el = orbRefs[i].current;
           if (el) {
             el.style.transform = `translate(${x - cap.size / 2}px, ${y - cap.size / 2}px) scale(${scale})`;
             el.style.opacity = String(opacity);
           }
         }
-
-        if (allDone && mode === 'condensing') {
-          modeRef.current = 'condensed';
-        }
+        if (allDone && mode === 'condensing') modeRef.current = 'condensed';
 
       } else if (mode === 'expanding') {
         if (container) container.style.zIndex = '95';
-        const cx = w / 2;
-        const cy = h / 2;
+        const cx = w / 2, cy = h / 2;
         const elapsed = performance.now() - animStartRef.current;
         const rawT = Math.min(elapsed / EXPAND_DURATION, 1);
         const t = easeOutCubic(rawT);
         const scale = MIN_SCALE + t * (1 - MIN_SCALE);
         const opacity = Math.min(1, t / 0.4);
-
         for (let i = 0; i < 3; i++) {
           const cap = capturedRef.current[i];
           const x = cx + (cap.x - cx) * t;
@@ -248,14 +246,11 @@ const FloatingOrbs = ({ condensing }) => {
             el.style.opacity = String(opacity);
           }
         }
-
         if (rawT >= 1) {
           for (let i = 0; i < 3; i++) {
             const cap = capturedRef.current[i];
-            bodies[i].x = cap.x;
-            bodies[i].y = cap.y;
-            bodies[i].vx = cap.vx;
-            bodies[i].vy = cap.vy;
+            bodies[i].x = cap.x; bodies[i].y = cap.y;
+            bodies[i].vx = cap.vx; bodies[i].vy = cap.vy;
           }
           modeRef.current = 'physics';
         }
