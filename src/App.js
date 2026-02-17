@@ -136,8 +136,8 @@ function App() {
                 className="cta-button"
                 onClick={() => setModalOpen(true)}
               >
-                Sign Up
-              </button>
+            Sign In
+          </button>
             </div>
           </main>
           <SignUpModal
