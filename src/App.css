@@ -16,7 +16,7 @@
 .landing-content-faded {
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.35s ease;
+  transition: opacity 0.15s ease;
 }
 
 .name {

@@ -30,23 +30,20 @@
   transform: translate(calc(-50% + var(--ox, 0px)), calc(-50% + var(--oy, 0px))) scale(0.04);
   opacity: 0;
   pointer-events: none;
-  visibility: hidden;
 
   transition:
     transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.35s ease,
-    visibility 0s 0.5s;
+    opacity 0.35s ease;
 }
 
 .modal-card-active {
   transform: translate(-50%, -50%) scale(1);
   opacity: 1;
   pointer-events: auto;
-  visibility: visible;
+
   transition:
     transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.35s ease,
-    visibility 0s 0s;
+    opacity 0.35s ease;
 }
 
 /* ---- Glow layer — radial gradients, no filter:blur ---- */
