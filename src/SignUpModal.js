@@ -89,6 +89,7 @@ const SignUpModal = ({ open, buttonRef, onClose, onSignIn, orbPositionsRef }) =>
     const tryInit = () => {
       const g = window.google?.accounts?.id;
       if (!g || !googleBtnRef.current) return false;
+      googleBtnRef.current.innerHTML = '';
 
       g.initialize({
         client_id: CLIENT_ID,
