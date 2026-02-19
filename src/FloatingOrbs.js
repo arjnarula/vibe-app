@@ -14,12 +14,14 @@ const SOFTENING = 120;
 const DAMPING = 0.9999;
 const BOUNDARY_FORCE = 0.3;
 const BOUNDARY_MARGIN = 80;
-const DT = 0.7;
-const MAX_SPEED = 5;
+const DT = 0.5;
+const MAX_SPEED = 3.5;
 
 const CONDENSE_BASE = 400;
 const CONDENSE_EXTRA = 300;
 const EXPAND_DURATION = 500;
+const DISPERSE_DURATION = 700;
+const RECONVERGE_DURATION = 600;
 const MIN_SCALE = 0.08;
 
 function easeOutCubic(t) {
@@ -93,7 +95,7 @@ const ORB_COLORS = [
   'rgba(255, 138, 94, 0.4)',
 ];
 
-const FloatingOrbs = ({ condensing, orbPositionsRef }) => {
+const FloatingOrbs = ({ condensing, dispersing, orbPositionsRef }) => {
   const bodiesRef = useRef(null);
   const rafRef = useRef(null);
   const containerRef = useRef(null);
@@ -121,7 +123,9 @@ const FloatingOrbs = ({ condensing, orbPositionsRef }) => {
 
   useEffect(() => {
     if (!ready) return;
-    if (condensing && modeRef.current === 'physics') {
+    const mode = modeRef.current;
+
+    if (condensing && mode === 'physics') {
       const { w, h } = getViewport();
       const cx = w / 2, cy = h / 2;
       capturedRef.current = bodiesRef.current.map((b, i) => ({
@@ -137,11 +141,24 @@ const FloatingOrbs = ({ condensing, orbPositionsRef }) => {
       animStartRef.current = performance.now();
       zElevateTimeRef.current = performance.now() + 100;
       modeRef.current = 'condensing';
-    } else if (!condensing && (modeRef.current === 'condensed' || modeRef.current === 'condensing')) {
+    } else if (!condensing && (mode === 'condensed' || mode === 'condensing')) {
       animStartRef.current = performance.now();
-      modeRef.current = 'expanding';
+      modeRef.current = dispersing ? 'dispersing' : 'expanding';
     }
-  }, [condensing, ready, getViewport]);
+
+    if (dispersing && mode === 'physics') {
+      capturedRef.current = bodiesRef.current.map((b, i) => ({
+        x: b.x, y: b.y, vx: b.vx, vy: b.vy, size: ORB_SIZES[i],
+      }));
+      animStartRef.current = performance.now();
+      modeRef.current = 'dispersing';
+    }
+
+    if (!dispersing && mode === 'dispersed') {
+      animStartRef.current = performance.now();
+      modeRef.current = 'reconverging';
+    }
+  }, [condensing, dispersing, ready, getViewport]);
 
   useEffect(() => {
     if (!ready) return;
@@ -245,6 +262,70 @@ const FloatingOrbs = ({ condensing, orbPositionsRef }) => {
           const cap = capturedRef.current[i];
           const x = cx + (cap.x - cx) * t;
           const y = cy + (cap.y - cy) * t;
+          const el = orbRefs[i].current;
+          if (el) {
+            el.style.transform = `translate(${x - cap.size / 2}px, ${y - cap.size / 2}px) scale(${scale})`;
+            el.style.opacity = String(opacity);
+          }
+        }
+        if (rawT >= 1) {
+          for (let i = 0; i < 3; i++) {
+            const cap = capturedRef.current[i];
+            bodies[i].x = cap.x; bodies[i].y = cap.y;
+            bodies[i].vx = cap.vx; bodies[i].vy = cap.vy;
+          }
+          modeRef.current = 'physics';
+        }
+
+      } else if (mode === 'dispersing') {
+        if (container) container.style.zIndex = '0';
+        const cx = w / 2, cy = h / 2;
+        const elapsed = performance.now() - animStartRef.current;
+        const rawT = Math.min(elapsed / DISPERSE_DURATION, 1);
+        const t = easeOutCubic(rawT);
+
+        for (let i = 0; i < 3; i++) {
+          const cap = capturedRef.current[i];
+          const dx = cap.x - cx;
+          const dy = cap.y - cy;
+          const overshoot = 1.8;
+          const x = cx + dx * overshoot * t;
+          const y = cy + dy * overshoot * t;
+          const scale = MIN_SCALE + (1.3 - MIN_SCALE) * t;
+          const opacity = t < 0.2 ? (t / 0.2) * 0.5 : 0.5 * Math.max(0, 1 - (t - 0.2) / 0.8);
+          const el = orbRefs[i].current;
+          if (el) {
+            el.style.transform = `translate(${x - cap.size / 2}px, ${y - cap.size / 2}px) scale(${scale})`;
+            el.style.opacity = String(opacity);
+          }
+        }
+        if (rawT >= 1) modeRef.current = 'dispersed';
+
+      } else if (mode === 'dispersed') {
+        if (container) container.style.zIndex = '0';
+        for (let i = 0; i < 3; i++) {
+          const el = orbRefs[i].current;
+          if (el) el.style.opacity = '0';
+        }
+
+      } else if (mode === 'reconverging') {
+        if (container) container.style.zIndex = '0';
+        const cx = w / 2, cy = h / 2;
+        const elapsed = performance.now() - animStartRef.current;
+        const rawT = Math.min(elapsed / RECONVERGE_DURATION, 1);
+        const t = easeOutCubic(rawT);
+
+        for (let i = 0; i < 3; i++) {
+          const cap = capturedRef.current[i];
+          const dx = cap.x - cx;
+          const dy = cap.y - cy;
+          const overshoot = 1.8;
+          const startX = cx + dx * overshoot;
+          const startY = cy + dy * overshoot;
+          const x = startX + (cap.x - startX) * t;
+          const y = startY + (cap.y - startY) * t;
+          const scale = 1.3 + (1 - 1.3) * t;
+          const opacity = t;
           const el = orbRefs[i].current;
           if (el) {
             el.style.transform = `translate(${x - cap.size / 2}px, ${y - cap.size / 2}px) scale(${scale})`;

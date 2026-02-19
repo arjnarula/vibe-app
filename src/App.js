@@ -2,9 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import './App.css';
 import FloatingOrbs from './FloatingOrbs';
 import SignUpModal from './SignUpModal';
+import DeckPage from './DeckPage';
 
 const USER_STORAGE_KEY = 'pantheon_user';
+const DECK_AUTH_KEY = 'pantheon_deck_auth';
 const AGENT_PATH = '/agent';
+const DECK_PATH = '/deck';
 const TRANSITION_MS = 450;
 const SIGNOUT_FADE_MS = 400;
 
@@ -16,6 +19,10 @@ function safeReadStoredUser() {
     console.error('Failed to read stored user', error);
     return null;
   }
+}
+
+function isDeckAuthed() {
+  return sessionStorage.getItem(DECK_AUTH_KEY) === '1';
 }
 
 function setBrowserPath(pathname, replace = false) {
@@ -36,13 +43,24 @@ function App() {
   const [agentVisible, setAgentVisible] = useState(
     () => window.location.pathname === AGENT_PATH && safeReadStoredUser() !== null
   );
+  const [deckAuthed, setDeckAuthed] = useState(() => isDeckAuthed());
+  const [showDeck, setShowDeck] = useState(
+    () => window.location.pathname === DECK_PATH && isDeckAuthed()
+  );
+  const [orbsDispersing, setOrbsDispersing] = useState(
+    () => window.location.pathname === DECK_PATH && isDeckAuthed()
+  );
   const buttonRef = useRef(null);
   const orbPositionsRef = useRef([]);
 
   useEffect(() => {
     const onPopState = () => {
-      setPathname(window.location.pathname);
-      setAgentVisible(window.location.pathname === AGENT_PATH && !!user);
+      const p = window.location.pathname;
+      setPathname(p);
+      setAgentVisible(p === AGENT_PATH && !!user);
+      const deckActive = p === DECK_PATH && isDeckAuthed();
+      setShowDeck(deckActive);
+      setOrbsDispersing(deckActive);
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
@@ -62,6 +80,14 @@ function App() {
     localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
   }, [user, pathname]);
 
+  useEffect(() => {
+    if (pathname === DECK_PATH && !deckAuthed) {
+      setBrowserPath('/', true);
+      setPathname('/');
+      setShowDeck(false);
+    }
+  }, [pathname, deckAuthed]);
+
   const handleSignIn = (userData) => {
     setUser(userData);
     setTransitioning(true);
@@ -75,6 +101,28 @@ function App() {
     }, TRANSITION_MS);
   };
 
+  const handleDeckAuth = () => {
+    sessionStorage.setItem(DECK_AUTH_KEY, '1');
+    setDeckAuthed(true);
+    setTransitioning(true);
+    setModalOpen(false);
+    setOrbsDispersing(true);
+
+    setTimeout(() => {
+      setBrowserPath(DECK_PATH);
+      setPathname(DECK_PATH);
+      setTransitioning(false);
+      requestAnimationFrame(() => setShowDeck(true));
+    }, TRANSITION_MS);
+  };
+
+  const handleDeckBack = () => {
+    setShowDeck(false);
+    setOrbsDispersing(false);
+    setBrowserPath('/');
+    setPathname('/');
+  };
+
   const handleSignOut = () => {
     setAgentVisible(false);
     setTimeout(() => {
@@ -84,20 +132,26 @@ function App() {
     }, SIGNOUT_FADE_MS);
   };
 
-  const showAgent = pathname === AGENT_PATH && user && !transitioning;
+  const isAgentRoute = pathname === AGENT_PATH && user && !transitioning;
+  const isDeckRoute = pathname === DECK_PATH && deckAuthed && !transitioning;
 
   return (
     <>
-      <FloatingOrbs condensing={modalOpen} orbPositionsRef={orbPositionsRef} />
+      <FloatingOrbs
+        condensing={modalOpen}
+        dispersing={orbsDispersing}
+        orbPositionsRef={orbPositionsRef}
+      />
 
-      {showAgent ? (
+      {isDeckRoute && showDeck && (
+        <DeckPage onBack={handleDeckBack} />
+      )}
+
+      {isAgentRoute ? (
         <main className={`agent-page ${agentVisible ? 'agent-page-visible' : ''}`}>
           <header className="agent-header">
             <h1 className="agent-brand">Agent</h1>
             <div className="agent-user-info">
-              {user.picture && (
-                <img className="agent-avatar" src={user.picture} alt={user.name || 'User'} />
-              )}
               <div className="agent-user-meta">
                 <span className="agent-user-name">{user.givenName || user.name}</span>
                 <span className="agent-user-email">{user.email}</span>
@@ -124,7 +178,7 @@ function App() {
             </div>
           </section>
         </main>
-      ) : (
+      ) : !(isDeckRoute && showDeck) && (
         <>
           <main className="landing">
             <div className={`landing-content ${modalOpen || transitioning ? 'landing-content-faded' : ''}`}>
@@ -145,6 +199,7 @@ function App() {
             buttonRef={buttonRef}
             onClose={() => setModalOpen(false)}
             onSignIn={handleSignIn}
+            onDeckAuth={handleDeckAuth}
             orbPositionsRef={orbPositionsRef}
           />
         </>

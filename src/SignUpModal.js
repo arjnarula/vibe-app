@@ -22,15 +22,20 @@ const BLOB_GRADIENTS = [
   'radial-gradient(circle, rgba(255,138,94,0.92) 0%, rgba(255,138,94,0) 70%)',
 ];
 
-const SignUpModal = ({ open, buttonRef, onClose, onSignIn, orbPositionsRef }) => {
+const SignUpModal = ({ open, buttonRef, onClose, onSignIn, onDeckAuth, orbPositionsRef }) => {
   const [active, setActive] = useState(false);
   const [blobStyles, setBlobStyles] = useState(null);
   const [googleReady, setGoogleReady] = useState(false);
+  const [passcode, setPasscode] = useState('');
+  const [passcodeError, setPasscodeError] = useState('');
+  const [passcodeLoading, setPasscodeLoading] = useState(false);
   const originRef = useRef({ x: 0, y: 0 });
   const rafRef = useRef(null);
   const googleBtnRef = useRef(null);
   const onSignInRef = useRef(onSignIn);
   onSignInRef.current = onSignIn;
+  const onDeckAuthRef = useRef(onDeckAuth);
+  onDeckAuthRef.current = onDeckAuth;
 
   // Open / close lifecycle
   useEffect(() => {
@@ -75,6 +80,9 @@ const SignUpModal = ({ open, buttonRef, onClose, onSignIn, orbPositionsRef }) =>
     } else {
       setActive(false);
       setGoogleReady(false);
+      setPasscode('');
+      setPasscodeError('');
+      setPasscodeLoading(false);
     }
 
     return () => {
@@ -129,7 +137,29 @@ const SignUpModal = ({ open, buttonRef, onClose, onSignIn, orbPositionsRef }) =>
     }
   }, [active]);
 
-  // Always render — no conditional return (Fix 2: eliminates first-click DOM jank)
+  const handlePasscodeSubmit = async (e) => {
+    e.preventDefault();
+    if (!passcode.trim() || passcodeLoading) return;
+    setPasscodeError('');
+    setPasscodeLoading(true);
+    try {
+      const res = await fetch('/api/verify-passcode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passcode: passcode.trim() }),
+      });
+      if (res.ok) {
+        onDeckAuthRef.current?.();
+      } else {
+        setPasscodeError('Invalid passcode');
+      }
+    } catch {
+      setPasscodeError('Something went wrong');
+    } finally {
+      setPasscodeLoading(false);
+    }
+  };
+
   const { x, y } = originRef.current;
   const hasClientId = Boolean(CLIENT_ID);
 
@@ -143,7 +173,6 @@ const SignUpModal = ({ open, buttonRef, onClose, onSignIn, orbPositionsRef }) =>
         className={`modal-card ${active ? 'modal-card-active' : ''}`}
         style={{ '--ox': `${x}px`, '--oy': `${y}px` }}
       >
-        {/* Glow layer — radial gradients, no filter:blur (Fix 2) */}
         <div className="modal-glow-layer" aria-hidden="true">
           {BLOB_SIZES.map((size, i) => {
             const bs = blobStyles?.[i];
@@ -175,6 +204,37 @@ const SignUpModal = ({ open, buttonRef, onClose, onSignIn, orbPositionsRef }) =>
           <h2 className="modal-title">Sign in to Pantheon</h2>
           <p className="modal-subtitle">Get started with your account</p>
           <div className="modal-divider" />
+
+          <form className="passcode-form" onSubmit={handlePasscodeSubmit}>
+            <div className="passcode-input-row">
+              <input
+                type="password"
+                className="passcode-input"
+                placeholder="Passcode"
+                value={passcode}
+                onChange={(e) => { setPasscode(e.target.value); setPasscodeError(''); }}
+                autoComplete="off"
+              />
+              <button
+                type="submit"
+                className="passcode-submit"
+                disabled={passcodeLoading || !passcode.trim()}
+              >
+                {passcodeLoading ? (
+                  <div className="passcode-spinner" />
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </button>
+            </div>
+            {passcodeError && <p className="passcode-error">{passcodeError}</p>}
+          </form>
+
+          <div className="modal-or-divider">
+            <span>or</span>
+          </div>
 
           {hasClientId ? (
             <>

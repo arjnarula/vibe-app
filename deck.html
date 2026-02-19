@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pantheon — Pre-Seed 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700;9..40,800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080808;
+      --surface: rgba(255, 255, 255, 0.025);
+      --surface-hover: rgba(255, 255, 255, 0.045);
+      --border: rgba(255, 255, 255, 0.07);
+      --border-accent: rgba(200, 169, 110, 0.3);
+      --white: #f0f0f0;
+      --silver: #888;
+      --muted: #484848;
+      --accent: #c8a96e;
+      --accent-soft: rgba(200, 169, 110, 0.12);
+      --red-soft: rgba(232, 112, 112, 0.15);
+      --red: #e87878;
+      --green: #7ec88a;
+      --gradient: linear-gradient(135deg, #b8945a 0%, #e2c98a 100%);
+      --gradient-text: linear-gradient(135deg, #c8a96e 0%, #e8d5a3 50%, #c8a96e 100%);
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--white);
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ── Deck shell ── */
+    .deck {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    /* Subtle dot grid */
+    .deck::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle, rgba(255,255,255,0.028) 1px, transparent 1px);
+      background-size: 36px 36px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Warm top glow */
+    .deck::after {
+      content: '';
+      position: fixed;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 70%;
+      height: 50%;
+      background: radial-gradient(ellipse at 50% 0%, rgba(200, 169, 110, 0.04) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Slides ── */
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 64px 80px 80px;
+      z-index: 1;
+      opacity: 0;
+      pointer-events: none;
+      overflow-y: auto;
+    }
+
+    /* ── Chrome ── */
+    .brand-mark {
+      position: fixed;
+      top: 28px;
+      left: 40px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: rgba(240,240,240,0.3);
+      z-index: 200;
+      user-select: none;
+    }
+
+    .slide-counter {
+      position: fixed;
+      bottom: 30px;
+      right: 40px;
+      font-size: 11px;
+      color: var(--muted);
+      z-index: 200;
+      letter-spacing: 0.08em;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .nav-dots {
+      position: fixed;
+      bottom: 26px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 7px;
+      z-index: 200;
+    }
+
+    .nav-dot {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+      padding: 0;
+      position: relative;
+    }
+
+    .nav-dot::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.3s, transform 0.3s;
+    }
+
+    .nav-dot.active::after {
+      background: var(--accent);
+      transform: translate(-50%, -50%) scale(1.5);
+    }
+
+    .nav-arrow {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: rgba(8,8,8,0.7);
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 200;
+      transition: border-color 0.2s, color 0.2s, opacity 0.3s;
+      opacity: 0;
+    }
+
+    .nav-arrow.near { opacity: 0.6; }
+    .nav-arrow.near:hover, .nav-arrow.active-edge { border-color: var(--accent); color: var(--accent); opacity: 1 !important; }
+    .nav-arrow.hidden { opacity: 0 !important; pointer-events: none; }
+    .nav-prev { left: 20px; }
+    .nav-next { right: 20px; }
+
+    /* ── Shared typography ── */
+    .label {
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+      font-family: 'Inter', sans-serif;
+      text-align: center;
+    }
+
+    .title {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.08;
+      color: var(--white);
+      text-align: center;
+    }
+
+    .t-xl  { font-size: clamp(60px, 8vw, 100px); }
+    .t-lg  { font-size: clamp(36px, 4.5vw, 58px); }
+    .t-md  { font-size: clamp(28px, 3.2vw, 44px); }
+    .t-sm  { font-size: clamp(22px, 2.4vw, 32px); }
+
+    .accent-word { background: var(--gradient-text); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    .body { font-size: 15px; line-height: 1.7; color: var(--silver); font-family: 'Inter', sans-serif; }
+    .body-sm { font-size: 13px; line-height: 1.6; color: var(--silver); font-family: 'Inter', sans-serif; }
+
+    .divider {
+      width: 36px; height: 2px;
+      background: var(--gradient);
+      border-radius: 2px;
+      margin: 22px auto;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 30px;
+    }
+
+    /* ────────────────────────────────────────
+       SLIDE 1 — TITLE
+    ──────────────────────────────────────── */
+    .s1 {
+      text-align: center;
+    }
+
+    .s1-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 5px 14px;
+      margin-bottom: 36px;
+      font-size: 11.5px;
+      color: var(--silver);
+      font-family: 'Inter', sans-serif;
+      letter-spacing: 0.02em;
+    }
+
+    .s1-badge-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .s1-tagline {
+      font-size: clamp(18px, 2.2vw, 26px);
+      color: var(--silver);
+      font-family: 'Inter', sans-serif;
+      font-weight: 300;
+      margin-top: 18px;
+      margin-bottom: 40px;
+      letter-spacing: -0.01em;
+    }
+
+    .s1-sub {
+      font-size: 14px;
+      color: var(--silver);
+      max-width: 540px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    .s1-meta {
+      margin-top: 52px;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+
+    /* ────────────────────────────────────────
+       SLIDE 2 — PURPOSE
+    ──────────────────────────────────────── */
+    .s2 { text-align: center; width: 100%; max-width: 940px; }
+
+    .s2-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 48px;
+      text-align: left;
+    }
+
+    .s2-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 26px 24px;
+    }
+
+    .s2-icon {
+      font-size: 22px;
+      margin-bottom: 14px;
+    }
+
+    .s2-card-title {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+
+    /* ────────────────────────────────────────
+       SLIDE 3 — PROBLEM
+    ──────────────────────────────────────── */
+    .s3-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-top: 40px;
+    }
+
+    .s3-stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px 22px;
+      text-align: center;
+    }
+
+    .s3-num {
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(36px, 4vw, 52px);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      background: var(--gradient-text);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+
+    .s3-stat-label { font-size: 13px; color: var(--silver); line-height: 1.5; }
+
+    .s3-callout {
+      margin-top: 24px;
+      padding: 18px 26px;
+      border-left: 2px solid var(--accent);
+      background: var(--surface);
+      border-radius: 0 12px 12px 0;
+    }
+
+    /* ────────────────────────────────────────
+       SLIDE 4 — SOLUTION
+    ──────────────────────────────────────── */
+    .s4-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 36px;
+    }
+
+    .s4-col {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px 22px;
+    }
+
+    .s4-col.theirs { border-color: rgba(232,120,120,0.15); }
+    .s4-col.ours   { border-color: var(--border-accent); background: rgba(200,169,110,0.04); }
+
+    .s4-col-head {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      padding-bottom: 14px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .s4-col-head.bad  { color: var(--red); }
+    .s4-col-head.good { color: var(--accent); }
+
+    .s4-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 12px;
+      font-size: 13.5px;
+      line-height: 1.5;
+    }
+
+    .s4-row .icon { flex-shrink: 0; margin-top: 1px; font-size: 13px; }
+    .s4-row.bad  { color: #c07878; }
+    .s4-row.good { color: #b0b0b0; }
+
+    .s4-callout {
+      grid-column: 1 / -1;
+      padding: 18px 24px;
+      background: var(--accent-soft);
+      border: 1px solid var(--border-accent);
+      border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--white);
+      text-align: center;
+      letter-spacing: -0.01em;
+    }
+
+    /* ────────────────────────────────────────
+       SLIDE 5 — WHY NOW
+    ──────────────────────────────────────── */
+    .s5-reasons {
+      display: grid;
+      gap: 13px;
+      margin-top: 36px;
+    }
+
+    .s5-reason {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      padding: 20px 22px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .s5-num {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      background: var(--gradient-text);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      flex-shrink: 0;
+      line-height: 1;
+      min-width: 28px;
+    }
+
+    .s5-reason h4 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 4px;
+      letter-spacing: -0.015em;
+    }
+
+    .s5-reason p { font-size: 13px; color: var(--silver); line-height: 1.55; }
+
+    /* ────────────────────────────────────────
+       SLIDE 6 — TEAM
+    ──────────────────────────────────────── */
+    .s6 { width: 100%; max-width: 920px; }
+
+    .s6-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      margin-top: 40px;
+    }
+
+    .s6-person {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 30px 28px;
+    }
+
+    .s6-name {
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(20px, 2.2vw, 27px);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      color: var(--white);
+      margin-bottom: 3px;
+    }
+
+    .s6-role {
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 20px;
+    }
+
+    .s6-bullets { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+
+    .s6-bullets li {
+      font-size: 13px;
+      color: var(--silver);
+      line-height: 1.5;
+      display: flex;
+      gap: 9px;
+      align-items: flex-start;
+    }
+
+    .s6-bullets li::before {
+      content: '—';
+      color: var(--accent);
+      flex-shrink: 0;
+      font-size: 10px;
+      margin-top: 3px;
+    }
+
+    .s6-edu {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-size: 11.5px;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* ────────────────────────────────────────
+       SLIDE 7 — MARKET
+    ──────────────────────────────────────── */
+    .s7 { text-align: center; width: 100%; max-width: 980px; }
+
+    .s7-markets {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 44px;
+    }
+
+    .s7-market {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .s7-market::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 2px;
+    }
+
+    .s7-market.tam::after { background: var(--gradient); }
+    .s7-market.sam::after { background: linear-gradient(90deg, transparent, var(--accent)); }
+    .s7-market.som::after { background: linear-gradient(90deg, transparent, rgba(200,169,110,0.4)); }
+
+    .s7-tier {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .s7-value {
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(40px, 4.5vw, 56px);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: var(--white);
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+
+    .s7-desc { font-size: 13px; color: var(--silver); line-height: 1.5; margin-bottom: 14px; }
+    .s7-growth { font-size: 12px; color: var(--accent); font-weight: 500; }
+
+    .s7-note {
+      margin-top: 28px;
+      font-size: 12.5px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ────────────────────────────────────────
+       SLIDE 8 — VISION
+    ──────────────────────────────────────── */
+    .s8 { text-align: center; max-width: 860px; width: 100%; }
+
+    .s8-quote {
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(24px, 3vw, 38px);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      line-height: 1.25;
+      color: var(--white);
+      margin-bottom: 52px;
+    }
+
+    .s8-stages {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      text-align: left;
+    }
+
+    .s8-stage {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: 22px 20px;
+    }
+
+    .s8-phase {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .s8-stage-title {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 8px;
+      letter-spacing: -0.015em;
+    }
+
+    /* ────────────────────────────────────────
+       SLIDE 9 — NEXT STEPS
+    ──────────────────────────────────────── */
+    .s9 { text-align: center; max-width: 880px; width: 100%; }
+
+    .s9-raise { margin-bottom: 40px; }
+
+    .s9-raise-label {
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .s9-amount {
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(42px, 6vw, 76px);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      background: var(--gradient-text);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .s9-raise-sub { font-size: 14px; color: var(--muted); }
+
+    .s9-milestones {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+      text-align: left;
+    }
+
+    .s9-milestone {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 18px;
+    }
+
+    .s9-m-title {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 7px;
+      letter-spacing: -0.01em;
+    }
+
+    .s9-contact {
+      padding: 20px 24px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+    }
+
+    .s9-contact p { font-size: 13.5px; color: var(--silver); line-height: 1.6; }
+    .s9-contact a { color: var(--accent); text-decoration: none; }
+    .s9-contact a:hover { text-decoration: underline; }
+
+    /* ── Responsive ── */
+    @media (max-width: 960px) {
+      .slide { padding: 48px 40px 72px; }
+      .s2-grid, .s3-stats, .s4-compare, .s6-grid, .s7-markets, .s8-stages, .s9-milestones {
+        grid-template-columns: 1fr;
+      }
+      .s4-callout { grid-column: auto; }
+    }
+
+    @media (max-width: 640px) {
+      .slide { padding: 28px 20px 72px; }
+      .nav-arrow { display: none; }
+      .brand-mark { font-size: 14px; left: 20px; top: 18px; }
+      .slide-counter { right: 20px; bottom: 20px; }
+    }
+  </style>
+</head>
+<body>
+<div class="deck">
+
+  <!-- Chrome -->
+  <div class="brand-mark">Pantheon</div>
+  <div class="slide-counter" id="counter">1 / 9</div>
+  <nav class="nav-dots" id="dots"></nav>
+
+  <button class="nav-arrow nav-prev hidden" id="prevBtn" aria-label="Previous">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M9 2L4 7L9 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+  <button class="nav-arrow nav-next" id="nextBtn" aria-label="Next">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M5 2L10 7L5 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <!-- ═══════════════════════════════════════
+       SLIDE 1 — TITLE
+  ══════════════════════════════════════════ -->
+  <section class="slide s1" data-index="0">
+    <div class="s1-badge">
+      <span class="s1-badge-dot"></span>
+      Pre-Seed Round &mdash; 2026
+    </div>
+    <h1 class="title t-xl">Pantheon</h1>
+    <p class="s1-tagline">A Web Agent that Works</p>
+    <div class="divider"></div>
+    <p class="s1-sub">
+      Automate any workflow on any website &mdash; deterministically, efficiently, and at enterprise scale.
+    </p>
+    <p class="s1-meta">Confidential &nbsp;·&nbsp; Not for distribution</p>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       SLIDE 2 — COMPANY PURPOSE
+  ══════════════════════════════════════════ -->
+  <section class="slide" data-index="1">
+    <div class="s2">
+      <p class="label">Company Purpose</p>
+      <h2 class="title t-lg" style="line-height: 1.1;">
+        We automate online work so you can<br/><span class="accent-word">focus on what matters.</span>
+      </h2>
+      <div class="s2-grid">
+        <div class="s2-card">
+          <div class="s2-icon">⚡</div>
+          <div class="s2-card-title">Any Website, Any Task</div>
+          <p class="body-sm">
+            Operates on any internal tool, SaaS platform, or website &mdash; no bespoke integrations, no proprietary APIs required.
+          </p>
+        </div>
+        <div class="s2-card">
+          <div class="s2-icon">🔒</div>
+          <div class="s2-card-title">Enterprise-Grade Security</div>
+          <p class="body-sm">
+            Deployable fully on-premise. No customer data leaves your infrastructure. Compliance-ready by architecture.
+          </p>
+        </div>
+        <div class="s2-card">
+          <div class="s2-icon">📐</div>
+          <div class="s2-card-title">Deterministic by Design</div>
+          <p class="body-sm">
+            Every action is auditable and explainable &mdash; not probabilistic guesswork. Reliable enough for production workloads.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       SLIDE 3 — PROBLEM
+  ══════════════════════════════════════════ -->
+  <section class="slide" data-index="2">
+    <div style="width: 100%; max-width: 980px;">
+      <p class="label">The Problem</p>
+      <h2 class="title t-lg">
+        AI automation is a top priority.<br/>
+        <span class="accent-word">Almost nobody is doing it right.</span>
+      </h2>
+      <div class="s3-stats">
+        <div class="s3-stat">
+          <div class="s3-num">96%</div>
+          <p class="s3-stat-label">of CIOs cite AI-driven automation as a critical business priority</p>
+        </div>
+        <div class="s3-stat">
+          <div class="s3-num">60%</div>
+          <p class="s3-stat-label">of enterprise AI pilots fail to deliver clear ROI due to cost and complexity</p>
+        </div>
+        <div class="s3-stat">
+          <div class="s3-num">$500K+</div>
+          <p class="s3-stat-label">average annual cost of operational inefficiency per mid-sized enterprise</p>
+        </div>
+      </div>
+      <div class="s3-callout">
+        <p class="body-sm">
+          Building in-house takes <strong style="color: var(--white);">12+ months</strong> and frequently stalls. Current web agents feed screenshots to frontier models at every step — they are too slow, too expensive, and blocked by enterprise anti-bot protection. The result: stalled pilots, eroded trust, and compounding costs.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       SLIDE 4 — SOLUTION
+  ══════════════════════════════════════════ -->
+  <section class="slide" data-index="3">
+    <div style="width: 100%; max-width: 980px;">
+      <p class="label">Our Solution</p>
+      <h2 class="title t-lg">A fundamentally <span class="accent-word">different approach</span><br/>to web automation.</h2>
+      <div class="s4-compare">
+        <div class="s4-col theirs">
+          <div class="s4-col-head bad">Traditional Web Agents</div>
+          <div class="s4-row bad"><span class="icon">✕</span> Feed screenshots + DOM to LLMs at every step</div>
+          <div class="s4-row bad"><span class="icon">✕</span> Requires expensive frontier models — fragile &amp; slow</div>
+          <div class="s4-row bad"><span class="icon">✕</span> Fine-tuning on proprietary data per customer</div>
+          <div class="s4-row bad"><span class="icon">✕</span> Blocked by enterprise-grade anti-bot protection</div>
+          <div class="s4-row bad"><span class="icon">✕</span> 12+ months to deploy, limited to mid-market only</div>
+        </div>
+        <div class="s4-col ours">
+          <div class="s4-col-head good">Pantheon</div>
+          <div class="s4-row good"><span class="icon">✓</span> Exposes every website action as a direct tool / MCP</div>
+          <div class="s4-row good"><span class="icon">✓</span> Runs on small open-source models — cheap and fast</div>
+          <div class="s4-row good"><span class="icon">✓</span> Zero fine-tuning required — deploys in days</div>
+          <div class="s4-row good"><span class="icon">✓</span> Natively bypasses anti-bot protection</div>
+          <div class="s4-row good"><span class="icon">✓</span> SME, mid-market, and enterprise — any size, day one</div>
+        </div>
+        <div class="s4-callout">
+          We give AI direct network access to every action on every website &mdash; the same way a browser works under the hood, but without the browser overhead or multi-modal inference.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       SLIDE 5 — WHY NOW
+  ══════════════════════════════════════════ -->
+  <section class="slide" data-index="4">
+    <div style="width: 100%; max-width: 880px;">
+      <p class="label">Why Now</p>
+      <h2 class="title t-lg">The window is open.<br/><span class="accent-word">It won't stay open long.</span></h2>
+      <div class="s5-reasons">
+        <div class="s5-reason">
+          <div class="s5-num">01</div>
+          <div>
+            <h4>The market just validated web agents</h4>
+            <p>Salesforce acquired Convergence, a direct web agent competitor, in 2025. Enterprises are actively demanding this capability &mdash; the wave is breaking now.</p>
+          </div>
+        </div>
+        <div class="s5-reason">
+          <div class="s5-num">02</div>
+          <div>
+            <h4>Open-source models crossed the capability threshold</h4>
+            <p>Our architecture only needs a model to select from structured tools. Even small open-source models can do this reliably today &mdash; making our approach viable at scale right now.</p>
+          </div>
+        </div>
+        <div class="s5-reason">
+          <div class="s5-num">03</div>
+          <div>
+            <h4>Frontier models alone won't solve this for 2+ years</h4>
+            <p>Inference costs and data compliance keep screenshot-based agents out of reach for most organisations. Our architecture sidesteps both &mdash; permanently, not temporarily.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       SLIDE 6 — TEAM
+  ══════════════════════════════════════════ -->
+  <section class="slide" data-index="5">
+    <div style="width: 100%; max-width: 920px;">
+      <p class="label" style="text-align: center;">The Team</p>
+      <h2 class="title t-lg" style="text-align: center;">
+        Built by people who've<br/><span class="accent-word">done hard things before.</span>
+      </h2>
+      <div class="s6-grid">
+        <div class="s6-person">
+          <div class="s6-name">Arjun Narula</div>
+          <div class="s6-role">CEO &amp; Co-Founder</div>
+          <ul class="s6-bullets">
+            <li>Led AI agentic work at Northflank, along with contributing to marketing and sales efforts</li>
+            <li>Backend Engineer at RobinAI — worked with AI researchers to improve the Legal AI assistant</li>
+            <li>Co-founder of MagicAPI — built the "Shopify for API providers", led sales and contributed to building the product. Generated recurring revenue</li>
+            <li>SWE at Amazon — used AI models to improve image and text placements on Prime Video and ad banners</li>
+            <li>"Data Scientist" at Hambro Perks — built a systematic approach to finding founders and startups for pre-seed funding, utilizing NLP and web automations. Sat on the investment team and also contributed as an investment analyst</li>
+          </ul>
+          <p class="s6-edu">MEng &amp; BEng, Computer Science (AI) — Imperial College London</p>
+        </div>
+        <div class="s6-person">
+          <div class="s6-name">Matt Malarkey</div>
+          <div class="s6-role">CTO &amp; Co-Founder</div>
+          <ul class="s6-bullets">
+            <li>Selected for a government-backed cyber program — secure-coding, reverse-engineering, pen-testing, among other things</li>
+            <li>Network Security Engineer at Open Systems — working within the Secure Web Gateway (proxy) team optimizing performance critical applications on edge platforms and cloud infrastructure</li>
+            <li>Electronic Trading Developer at Arctic Lake — worked on ultra low-latency mechanisms and integrations with multiple trading network protocols</li>
+            <li>Founder of Tunnel Ninja — built a mobile app for indoor skydiving bookings and events management. Onboarded customers and generated revenue</li>
+          </ul>
+          <p class="s6-edu">MEng &amp; BEng, Computer Science (Systems &amp; Networking) — Imperial College London</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       SLIDE 7 — MARKET POTENTIAL
+  ══════════════════════════════════════════ -->
+  <section class="slide" data-index="6">
+    <div class="s7">
+      <p class="label">Market Potential</p>
+      <h2 class="title t-lg">
+        A massive market,<br/>still in its <span class="accent-word">earliest innings.</span>
+      </h2>
+      <div class="s7-markets">
+        <div class="s7-market tam">
+          <p class="s7-tier">TAM</p>
+          <div class="s7-value">$6T</div>
+          <p class="s7-desc">Manual work automatable by AI agents by 2030 (McKinsey / Goldman)</p>
+          <p class="s7-growth">↑ Total opportunity horizon</p>
+        </div>
+        <div class="s7-market sam">
+          <p class="s7-tier">SAM</p>
+          <div class="s7-value">$5B</div>
+          <p class="s7-desc">AI automation market in 2024, growing at 80%+ annually</p>
+          <p class="s7-growth">↑ 80%+ CAGR</p>
+        </div>
+        <div class="s7-market som">
+          <p class="s7-tier">SOM</p>
+          <div class="s7-value">$500M</div>
+          <p class="s7-desc">SME &amp; mid-market web automation — our near-term beachhead</p>
+          <p class="s7-growth">↑ 3-year capture target</p>
+        </div>
+      </div>
+      <p class="s7-note">
+        Competitive validation: Salesforce acquired Convergence (web agent) in 2025 &nbsp;·&nbsp;
+        Agent AI is the fastest-growing software category on record
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       SLIDE 8 — VISION
+  ══════════════════════════════════════════ -->
+  <section class="slide" data-index="7">
+    <div class="s8">
+      <p class="label">Vision</p>
+      <p class="s8-quote">
+        "The infrastructure layer for automating<br/>work on the web &mdash;
+        <span class="accent-word">for every business,<br/>at any scale.</span>"
+      </p>
+      <div class="s8-stages">
+        <div class="s8-stage">
+          <p class="s8-phase">Phase 1 &nbsp;·&nbsp; Now</p>
+          <p class="s8-stage-title">B2C Validation</p>
+          <p class="body-sm">Launch lightweight consumer product to validate reliability at scale, generate distribution, and collect usage data to accelerate model optimisation.</p>
+        </div>
+        <div class="s8-stage">
+          <p class="s8-phase">Phase 2 &nbsp;·&nbsp; 3–6 Months</p>
+          <p class="s8-stage-title">B2B Design Partners</p>
+          <p class="body-sm">Onboard startups and mid-market companies as paid customers. Prove ROI, refine integrations, and build the case study library needed to win enterprise.</p>
+        </div>
+        <div class="s8-stage">
+          <p class="s8-phase">Phase 3 &nbsp;·&nbsp; 12 Months+</p>
+          <p class="s8-stage-title">Enterprise at Scale</p>
+          <p class="body-sm">On-premise deployments with full compliance, governance, and audit trails. The most reliable, secure web automation platform in the market.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       SLIDE 9 — NEXT STEPS
+  ══════════════════════════════════════════ -->
+  <section class="slide" data-index="8">
+    <div class="s9">
+      <p class="label">Next Steps</p>
+      <div class="s9-raise">
+        <p class="s9-raise-label">Currently Raising</p>
+        <div class="s9-amount">Pre-Seed</div>
+        <p class="s9-raise-sub">To prove technical leadership and secure first revenue</p>
+      </div>
+      <div class="s9-milestones">
+        <div class="s9-milestone">
+          <p class="s9-m-title">🏆&nbsp; Benchmark Leadership</p>
+          <p class="body-sm">State-of-the-art performance on real-world web automation benchmarks within 1 month, validating our technical edge.</p>
+        </div>
+        <div class="s9-milestone">
+          <p class="s9-m-title">🤝&nbsp; Design Partners</p>
+          <p class="body-sm">Multiple paying B2B customers or committed design partners within 3–6 months, proving clear commercial pull.</p>
+        </div>
+        <div class="s9-milestone">
+          <p class="s9-m-title">👥&nbsp; Key First Hires</p>
+          <p class="body-sm">Senior B2B enterprise seller to accelerate commercial validation, plus deep technical builders in AI and systems engineering.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- .deck -->
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const dotsEl  = document.getElementById('dots');
+  const counter = document.getElementById('counter');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const TOTAL   = slides.length;
+
+  let current   = 0;
+  let animating = false;
+
+  // Build dots
+  slides.forEach((_, i) => {
+    const d = document.createElement('button');
+    d.className = 'nav-dot' + (i === 0 ? ' active' : '');
+    d.setAttribute('aria-label', `Go to slide ${i + 1}`);
+    d.addEventListener('click', () => goTo(i));
+    dotsEl.appendChild(d);
+  });
+
+  function getDots() { return dotsEl.querySelectorAll('.nav-dot'); }
+
+  function updateChrome() {
+    counter.textContent = `${current + 1} / ${TOTAL}`;
+    getDots().forEach((d, i) => d.classList.toggle('active', i === current));
+    prevBtn.classList.toggle('hidden', current === 0);
+    nextBtn.classList.toggle('hidden', current === TOTAL - 1);
+  }
+
+  function goTo(index) {
+    if (animating || index === current || index < 0 || index >= TOTAL) return;
+    animating = true;
+
+    const dir      = index > current ? 1 : -1;
+    const outSlide = slides[current];
+    const inSlide  = slides[index];
+
+    // Instantly position incoming slide off-screen (no transition)
+    inSlide.style.cssText = `
+      transition: none;
+      opacity: 0;
+      transform: translateY(${dir * 28}px);
+      pointer-events: none;
+    `;
+
+    // Force a reflow so the above is painted before we re-enable transitions
+    void inSlide.offsetHeight;
+
+    // Exit outgoing slide
+    outSlide.style.cssText = `
+      opacity: 0;
+      transform: translateY(${-dir * 28}px);
+      pointer-events: none;
+      transition: opacity 0.38s cubic-bezier(0.4, 0, 1, 1),
+                  transform 0.38s cubic-bezier(0.4, 0, 1, 1);
+    `;
+
+    // Enter incoming slide
+    inSlide.style.cssText = `
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: all;
+      transition: opacity 0.48s cubic-bezier(0, 0, 0.2, 1),
+                  transform 0.48s cubic-bezier(0, 0, 0.2, 1);
+    `;
+
+    current = index;
+    updateChrome();
+
+    setTimeout(() => {
+      // Clean up inline styles, leave the slide visible
+      outSlide.style.cssText = '';
+      inSlide.style.cssText  = 'opacity: 1; pointer-events: all;';
+      animating = false;
+    }, 520);
+  }
+
+  function next() { goTo(current + 1); }
+  function prev() { goTo(current - 1); }
+
+  // Keyboard navigation
+  document.addEventListener('keydown', e => {
+    if (['ArrowRight', 'ArrowDown', ' '].includes(e.key)) { e.preventDefault(); next(); }
+    if (['ArrowLeft',  'ArrowUp'       ].includes(e.key)) { e.preventDefault(); prev(); }
+  });
+
+  nextBtn.addEventListener('click', next);
+  prevBtn.addEventListener('click', prev);
+
+  // Edge proximity — highlight arrows when mouse is near left/right edge
+  const EDGE_ZONE = 120; // px from edge to start showing arrow
+  const ACTIVE_ZONE = 60; // px from edge to fully highlight + allow click
+
+  document.addEventListener('mousemove', e => {
+    const w = window.innerWidth;
+    const x = e.clientX;
+
+    // Right edge
+    if (!nextBtn.classList.contains('hidden')) {
+      if (x >= w - ACTIVE_ZONE) {
+        nextBtn.classList.add('active-edge', 'near');
+      } else if (x >= w - EDGE_ZONE) {
+        nextBtn.classList.add('near');
+        nextBtn.classList.remove('active-edge');
+      } else {
+        nextBtn.classList.remove('near', 'active-edge');
+      }
+    }
+
+    // Left edge
+    if (!prevBtn.classList.contains('hidden')) {
+      if (x <= ACTIVE_ZONE) {
+        prevBtn.classList.add('active-edge', 'near');
+      } else if (x <= EDGE_ZONE) {
+        prevBtn.classList.add('near');
+        prevBtn.classList.remove('active-edge');
+      } else {
+        prevBtn.classList.remove('near', 'active-edge');
+      }
+    }
+  });
+
+  // Touch / swipe
+  let txStart = 0;
+  document.addEventListener('touchstart', e => { txStart = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend',   e => {
+    const dx = e.changedTouches[0].clientX - txStart;
+    if (Math.abs(dx) > 52) { dx < 0 ? next() : prev(); }
+  }, { passive: true });
+
+  // Initialise first slide
+  slides[0].style.cssText = 'opacity: 1; pointer-events: all;';
+  updateChrome();
+</script>
+</body>
+</html>
